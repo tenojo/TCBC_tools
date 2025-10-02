@@ -3,6 +3,8 @@ import pandas as pd
 import Structure
 import FeatureExtraction as fe
 import json
+import os
+from datasets import Dataset
 
 #Constants
 #In the deprel column
@@ -161,6 +163,14 @@ def scaleCorpusData(corpus_data: dict[str,float], scaling_data: dict[str,float])
     for key in corpus_data:
         returnable[key] = corpus_data[key]/scaling_data[key]
     return returnable
+
+def buildDatasetFromRawConllus(conllu_folder):
+    to_convert = []
+    for key in os.listdir(conllu_folder):
+        with open(conllu_folder+key, 'r', encoding='UTF-8') as reader:
+            conllu_text = reader.read()
+        to_convert.append({'book_id':key, 'data':conllu_text})
+    return Dataset.from_list(to_convert)
 
 def customConlluVectorizer(df: pd.DataFrame, generate_key_dictionary:bool=False):
     """
