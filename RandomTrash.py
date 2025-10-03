@@ -1,8 +1,7 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
-import Structure
-import FeatureExtraction as fe
+from TCBC_tools import Structure, FeatureExtraction as fe
 
 #These might get some use some day
 
