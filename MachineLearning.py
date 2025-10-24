@@ -1,7 +1,6 @@
 #Imports
 import pandas as pd
-from TCBC_tools import Structure
-from TCBC_tools import FeatureExtraction as fe
+from TCBC_tools import Structure, FeatureExtraction as fe
 import json
 import os
 from datasets import Dataset
