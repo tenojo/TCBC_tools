@@ -1,6 +1,7 @@
 #Imports
 import pandas as pd
 import os
+pd.options.mode.chained_assignment = None  # default='warn'
 
 #Functions
 def snippetConllu2DF(conllu_lines: str):
@@ -134,7 +135,7 @@ def buildIdTreeFromConllu(conllu: pd.DataFrame) -> dict[int,list[int]]:
     Build a tree for each sentence in a conllu file, where each node points to the corresponding DataFrame row of a line in the conllu-file
     """
     #Due to using properly formatted CoNLLUs, deal with 'ettei' etc. compounds by ignoring them (as they should be on the syntactic tree)
-    conllu = conllu[conllu['head'] != '_']
+    #conllu = conllu[conllu['head'] != '_']
     conllu['id'] = conllu['id'].apply(lambda x: str(x))
     id_tree = {}
     #First fetch ids marking boundaries for each sentence
@@ -148,12 +149,18 @@ def buildIdTreeFromConllu(conllu: pd.DataFrame) -> dict[int,list[int]]:
     #Build trees for each sentence
     for sentence in sentence_ids:
         root = 0
-        sent_locs = range(sentence[0],sentence[1]+1)
+        sent_locs = list(range(sentence[0],sentence[1]+1))
+        heads = conllu.iloc[sentence[0]:sentence[1]+1]['head'].to_numpy()
+        for i, x in enumerate(heads):
+            if x == '_':
+                heads[i] = -100
         heads = conllu.iloc[sentence[0]:sentence[1]+1]['head'].to_numpy(int)-1
         sent_tree = {x:[] for x in sent_locs}
         for j in range(len(heads)):
             if heads[j] == -1:
                 root = sent_locs[j]
+            elif heads[j] == -101:
+                pass
             else:
                 children = sent_tree[sent_locs[heads[j]]]
                 children.append(sent_locs[j])

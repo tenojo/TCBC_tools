@@ -670,7 +670,32 @@ def findStackingClauses(conllu: pd.DataFrame, id_tree: dict[int, dict[int, list[
                         break
     
     return stacking_clauses
-                
+
+def findClausalChildren(conllu: pd.DataFrame, tree: dict[int, list[int]], head):
+    """
+    Function to find clausal children of a node.
+    There is no one proper definition for what counts as a clausal children (esp. Finnish lauseenvastikkeet)
+    And not all 'clauses' found by these deprels would be counted as 'lause' in a traditional sense.
+    BUT it shall suffice. Technically speaking it's probably as good as the previous definitions, but here we are :)
+
+    CAUTION - SHOULD ONLY BE USED STARTING FROM THE ROOT NODE!!!!!!!!!
+    """
+    clauses = ['csubj', 'ccomp', 'xcomp', 'xcomp:ds', 'advcl', 'acl', 'acl:relcl', 'conj'] #HEAVY asterisk here on the inclusion of conj, but works IF we only look at clausal nodes
+    deprel_conllu = conllu['deprel']
+    head = str(head)
+    try:
+        children = tree[head]
+        clausal = []
+        for child in children:
+            if deprel_conllu.iloc[child] in clauses:
+                clausal.append(child)
+    except Exception as e:
+        print(e)
+        print(conllu.iloc[head-10:head+10])
+        print(conllu)
+        print(tree)
+        print(head)
+    return clausal            
 
 def getNonClausalChildrenAmount(deprel_conllu: pd.Series, tree: dict[int, list[int]], head):
     """
