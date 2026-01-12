@@ -695,7 +695,29 @@ def findClausalChildren(conllu: pd.DataFrame, tree: dict[int, list[int]], head):
         print(conllu)
         print(tree)
         print(head)
-    return clausal            
+    return clausal
+
+def getAllClausalNodes(conllu: pd.DataFrame, tree: dict[int, list[int]]):
+    clauses = ['csubj', 'ccomp', 'xcomp', 'xcomp:ds', 'advcl', 'acl', 'acl:relcl', 'root'] #HEAVY asterisk here on the inclusion of conj, but works IF we only look at clausal nodes
+    deprel_conllu = conllu['deprel']
+    clausal_nodes = []
+    rest_nodes = []
+    for node in tree:
+        if deprel_conllu.iloc[int(node)] in clauses:
+            clausal_nodes.append(int(node))
+        else:
+            rest_nodes.append(int(node))
+    size = 0
+    while size != len(clausal_nodes):
+        size = len(clausal_nodes)
+        for n in rest_nodes:
+            if deprel_conllu.iloc[n] == 'conj':
+                for c in clausal_nodes:
+                    if n in tree[str(c)]:
+                        rest_nodes.remove(n)
+                        clausal_nodes.append(n)
+                        break
+    return clausal_nodes
 
 def getNonClausalChildrenAmount(deprel_conllu: pd.Series, tree: dict[int, list[int]], head):
     """
