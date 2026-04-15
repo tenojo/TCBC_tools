@@ -168,7 +168,7 @@ def buildDatasetFromRawConllus(conllu_folder):
     for key in os.listdir(conllu_folder):
         with open(conllu_folder+key, 'r', encoding='UTF-8') as reader:
             conllu_text = reader.read()
-        to_convert.append({'book_id':key, 'data':conllu_text})
+        to_convert.append({'book_id':key.replace(".conllu", ""), 'data':conllu_text})
     return Dataset.from_list(to_convert)
 
 def customConlluVectorizer(df: pd.DataFrame, generate_key_dictionary:bool=False):
@@ -187,53 +187,55 @@ def customConlluVectorizer(df: pd.DataFrame, generate_key_dictionary:bool=False)
     word_amounts = fe.getTokenAmounts(temp_corp)
     sent_amounts = fe.getNumOfSentences(temp_corp)
 
+    #Use the word amounts to normalize instead of sentences...
+
     #Deprel per main clause for each deprel
     for deprel in DEPRELS:
-        feature_vector.append(fe.getDeprelFeaturePerBook(temp_corp, deprel, True)['1'])
+        feature_vector.append(fe.getDeprelFeaturePerBook(temp_corp, deprel, False)['1']/word_amounts['1'])
         if generate_key_dictionary:
             feature_indices[index] = deprel
             index += 1
     #Feat per main clause for each feature
     for feat in FEATS:
-        feature_vector.append(fe.getFeatsFeaturePerBook(temp_corp, feat, True)['1'])
+        feature_vector.append(fe.getFeatsFeaturePerBook(temp_corp, feat, False)['1']/word_amounts['1'])
         if generate_key_dictionary:
             feature_indices[index] = feat
             index += 1
     #POS related (simple) features
     for pos in POS:
-        #POS per main clause for each pos-tag
-        feature_vector.append(fe.getPosFeaturePerBook(temp_corp, pos, True)['1'])
+        #POS per token for each pos-tag
+        feature_vector.append(fe.getPosFeaturePerBook(temp_corp, pos, False)['1']/word_amounts['1'])
         if generate_key_dictionary:
             feature_indices[index] = pos
             index += 1
-        #POS pharses per main clause
-        feature_vector.append(scaleCorpusData(fe.getPosPhraseCounts(temp_corp, pos), sent_amounts)['1'])
+        #POS pharses per token
+        feature_vector.append(scaleCorpusData(fe.getPosPhraseCounts(temp_corp, pos), word_amounts)['1'])
         if generate_key_dictionary:
             feature_indices[index] = pos+"_Phrase"
             index += 1
         #POS variation
-        feature_vector.append(fe.getPOSVariation(df, pos))
-        if generate_key_dictionary:
-            feature_indices[index] = pos+"_Variation"
-            index += 1
+        #feature_vector.append(fe.getPOSVariation(df, pos))
+        #if generate_key_dictionary:
+        #    feature_indices[index] = pos+"_Variation"
+        #    index += 1
         #Corrected POS variation
         feature_vector.append(fe.getCorrectedPOSVariation(df, pos))
         if generate_key_dictionary:
             feature_indices[index] = pos+"_Variation_Corrected"
             index += 1
         #POS ratios
-        pos2 = POS.copy()
-        pos2.remove(pos)
-        for pos_2 in pos2:
+        #pos2 = POS.copy()
+        #pos2.remove(pos)
+        #for pos_2 in pos2:
             #Check that we don't divide by 0 by accident!
-            divider = fe.getPosFeaturePerBook(temp_corp, pos_2)['1']
-            if divider == 0:
-                feature_vector.append(0)
-            else:
-                feature_vector.append(fe.getPosFeaturePerBook(temp_corp, pos)['1'] / divider)
-            if generate_key_dictionary:
-                feature_indices[index] = pos+"_To_"+pos_2+"_Ratio"
-                index += 1
+        #    divider = fe.getPosFeaturePerBook(temp_corp, pos_2)['1']
+        #    if divider == 0:
+        #        feature_vector.append(0)
+        #    else:
+        #        feature_vector.append(fe.getPosFeaturePerBook(temp_corp, pos)['1'] / divider)
+        #    if generate_key_dictionary:
+        #        feature_indices[index] = pos+"_To_"+pos_2+"_Ratio"
+        #        index += 1
     """
     #Flat POS bigrams per main clause
     pos_bigrams = bdf.getPosNGramForCorpus(temp_corp, 2)['1']
@@ -282,11 +284,6 @@ def customConlluVectorizer(df: pd.DataFrame, generate_key_dictionary:bool=False)
     feature_vector.append(fe.getAverageSyllablesPerSentence(df, syntactic_tree))
     if generate_key_dictionary:
             feature_indices[index] = "AvgSylPerSent"
-            index += 1
-    #CONJ2Sent
-    feature_vector.append(fe.getConjPerSentence(temp_corp)['1'])
-    if generate_key_dictionary:
-            feature_indices[index] = "ConjPerSent"
             index += 1
     #Flesch-Kincaid grade level
     feature_vector.append(fe.getFleschKincaidGradeLevel(temp_corp)['1'])
@@ -344,27 +341,7 @@ def customConlluVectorizer(df: pd.DataFrame, generate_key_dictionary:bool=False)
     feature_vector.append(fe.findMeanLengthOfClause(df, syntactic_tree))
     if generate_key_dictionary:
             feature_indices[index] = "MLC"
-            index += 1
-    #deprel bigrams per main clause
-    """
-    deprel_bigrams = bdf.getSyntacticTreeNGram(df, syntactic_tree, 2)
-    for db in DEPREL_BIGRAMS:
-         feature_vector.append(deprel_bigrams.get(db, 0) / sent_amounts['1'])
-         if generate_key_dictionary:
-              feature_indices[index] = db[0]+'_'+db[1]
-              index += 1
-    """
-    #deprel trigrams per main clause
-    """
-    deprel_trigrams = bdf.getSyntacticTreeNGram(df, syntactic_tree, 3)
-    for dt in DEPREL_TRIGRAMS:
-         feature_vector.append(deprel_trigrams.get(dt, 0) / sent_amounts['1'])
-         if generate_key_dictionary:
-              feature_indices[index] = dt[0]+'_'+dt[1]+'_'+dt[2]
-              index += 1
-    """
-    
-
+            index += 1  
 
     if generate_key_dictionary:
          return feature_vector, feature_indices
