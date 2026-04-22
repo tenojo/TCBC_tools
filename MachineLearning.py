@@ -208,6 +208,7 @@ def customConlluVectorizer(df: pd.DataFrame, generate_key_dictionary:bool=False)
         if generate_key_dictionary:
             feature_indices[index] = pos
             index += 1
+    for pos in ['NOUN', 'VERB', 'ADJ']:
         #POS pharses per token
         feature_vector.append(scaleCorpusData(fe.getPosPhraseCounts(temp_corp, pos), word_amounts)['1'])
         if generate_key_dictionary:
@@ -219,6 +220,7 @@ def customConlluVectorizer(df: pd.DataFrame, generate_key_dictionary:bool=False)
         #    feature_indices[index] = pos+"_Variation"
         #    index += 1
         #Corrected POS variation
+    for pos in ['NOUN', 'VERB', 'ADJ']:
         feature_vector.append(fe.getCorrectedPOSVariation(df, pos))
         if generate_key_dictionary:
             feature_indices[index] = pos+"_Variation_Corrected"
